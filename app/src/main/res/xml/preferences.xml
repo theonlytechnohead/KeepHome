@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory
+        app:key="sync_category"
+        app:title="Sync / Notifications">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="notifications"
+            app:title="Enable sync notifications"
+            app:summaryOn="You will receive notifications from the app"
+            app:summaryOff="You won't be disturbed by notifications" />
+
+        <ListPreference
+            app:key="sync_interval"
+            app:title="Sync interval"
+            app:defaultValue="5"
+            app:dependency="notifications"
+            android:entries="@array/sync_interval_strings"
+            android:entryValues="@array/sync_interval_values"
+            android:summary="Interval (in minutes) between each sync"
+            app:useSimpleSummaryProvider="true" >
+
+        </ListPreference>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="wifi"
+        app:title="KeepHome WiFi">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="wifi_ap_mode"
+            app:title="Access point mode"
+            app:summaryOn="KeepHome will broadcast it's own network"
+            app:summaryOff="KeepHome will connect to your own network" />
+
+        <EditTextPreference
+            app:key="wifissid"
+            app:title="WiFi name (SSID)"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="wifipassword"
+            app:title="WiFi password (8 or more characters!)"
+            app:summary="Password must have at least 8 characters!" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="advanced"
+        app:title="Advanced">
+
+        <EditTextPreference
+            app:defaultValue="192.168.4.1"
+            app:key="keephome_ip"
+            app:title="KeepHome IP"
+            app:dialogLayout="@layout/preference_edit_text"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="help_category"
+        app:title="Help">
+
+        <Preference
+            app:key="feedback"
+            app:summary="Report technical issues or suggest new features"
+            app:title="Send feedback [Not connected]"/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

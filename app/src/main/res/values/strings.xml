@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">KeepHome</string>
+    <string name="preferences_activity_name">Preferences</string>
+    <string name="settings_string">Settings</string>
+    <string name="menu_refresh">Refresh</string>
+    <string name="generic_ip">192.168.1.1</string>
+    <string name="online">Online</string>
+    <string name="offline">Offline</string>
+</resources>
