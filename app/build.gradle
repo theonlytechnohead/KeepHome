@@ -3,16 +3,16 @@ apply plugin: 'com.android.application'
 android {
     signingConfigs {
 		main {
-			storeFile file('/home/cranderson/.android/keystore.jks')
+			storeFile file('C:\\Users\\desktop\\.android\\keystore.jks')
 			storePassword 'keystore'
-			keyAlias = 'debug key'
-			keyPassword 'keystore'
+			keyAlias = 'key0'
+			keyPassword 'key123'
 		}
 		debug {
-			storeFile file('/home/cranderson/.android/keystore.jks')
+			storeFile file('C:\\Users\\desktop\\.android\\keystore.jks')
 			storePassword 'keystore'
-			keyAlias = 'debug key'
-			keyPassword 'keystore'
+			keyAlias = 'key0'
+			keyPassword 'key123'
 		}
 	}
 	compileSdkVersion 29
@@ -40,14 +40,14 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-	implementation 'androidx.appcompat:appcompat:1.1.0'
+	implementation 'androidx.appcompat:appcompat:1.2.0'
 	implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     testImplementation 'junit:junit:4.12'
 	androidTestImplementation 'androidx.test.ext:junit:1.1.1'
 	androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 	implementation 'com.android.volley:dc-volley:1.1.0'
-	implementation 'com.android.support:support-v4:28.0.0'
-	implementation 'android.arch.work:work-runtime:1.0.1'
-	implementation 'androidx.concurrent:concurrent-futures:1.0.0-rc01'
-	implementation 'androidx.preference:preference:1.1.0'
+	implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+	implementation 'androidx.work:work-runtime:2.4.0'
+	implementation 'androidx.concurrent:concurrent-futures:1.1.0'
+	implementation 'androidx.preference:preference:1.1.1'
 }
