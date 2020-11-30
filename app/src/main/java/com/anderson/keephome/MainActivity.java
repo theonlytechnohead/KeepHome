@@ -11,6 +11,8 @@ import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -33,6 +35,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.potterhsu.Pinger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -94,6 +97,24 @@ public class MainActivity extends AppCompatActivity {
 		nsdManager = (NsdManager) getApplicationContext().getSystemService(Context.NSD_SERVICE);
 		initializeDiscoveryListener();
 		nsdManager.discoverServices("_http._tcp", NsdManager.PROTOCOL_DNS_SD, discoveryListener);
+
+
+		Pinger pinger = new Pinger();
+		pinger.setOnPingListener(new Pinger.OnPingListener() {
+			@Override
+			public void onPingSuccess() {
+				Looper.prepare();
+				Handler handler = new Handler(Looper.getMainLooper());
+				handler.post(() -> Toast.makeText(getApplicationContext(), "Ping'd KeepHome!", Toast.LENGTH_SHORT).show());
+			}
+
+			@Override
+			public void onPingFailure() { }
+
+			@Override
+			public void onPingFinish() { }
+		});
+		pinger.pingUntilSucceeded(sharedPreferences.getString("keephome_ip", "192.168.4.1"), 5000);;
 	}
 
 	@Override
