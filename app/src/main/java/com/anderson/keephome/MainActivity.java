@@ -322,6 +322,7 @@ public class MainActivity extends AppCompatActivity {
 				connection_status_text.setText(R.string.online);
 				connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
 			} else {
+				sharedPreferences.edit().putString("keephome_ip", "192.168.4.1").apply();
 				connection_status_text.setText(R.string.offline);
 				connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorAccent));
 			}
@@ -341,6 +342,9 @@ public class MainActivity extends AppCompatActivity {
 		@Override
 		public void serviceRemoved(ServiceEvent event) {
 			Log.d("mDNS listener", "Service lost: " + event.getInfo());
+			if (event.getName().equals("KeepHome")) {
+				updateDNS(null);
+			}
 		}
 
 		@Override
