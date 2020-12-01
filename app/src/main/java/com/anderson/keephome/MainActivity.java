@@ -7,12 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.RingtoneManager;
-import android.net.nsd.NsdManager;
-import android.net.nsd.NsdServiceInfo;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,18 +28,24 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.potterhsu.Pinger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.jmdns.JmDNS;
+import javax.jmdns.ServiceEvent;
+import javax.jmdns.ServiceListener;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -63,10 +66,7 @@ public class MainActivity extends AppCompatActivity {
 
 	AlarmReceiver alarmReceiver;
 
-	NsdServiceInfo keephomeServiceInfo;
-	public InetAddress address;
-	private NsdManager nsdManager;
-	private NsdManager.DiscoveryListener discoveryListener;
+	JmDNS jmDNS;
 
 	SharedPreferences sharedPreferences;
 
@@ -76,12 +76,8 @@ public class MainActivity extends AppCompatActivity {
 		setContentView(R.layout.activity_main);
 
 		swipeRefreshLayout = findViewById(R.id.swiper);
-		swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-			@Override
-			public void onRefresh () {
-				getData();
-			}
-		});
+		swipeRefreshLayout.setOnRefreshListener(this::getData);
+		findViewById(R.id.restartButton).setOnClickListener(v -> MainActivity.this.restartKeepHome());
 		connection_status_text = findViewById(R.id.connection_status_text);
 
 		Toolbar actionBar = findViewById(R.id.action_bar);
@@ -94,27 +90,14 @@ public class MainActivity extends AppCompatActivity {
 		alarmReceiver = new AlarmReceiver();
 		alarmReceiver.setAlarm(this, syncInterval);
 
-		nsdManager = (NsdManager) getApplicationContext().getSystemService(Context.NSD_SERVICE);
-		initializeDiscoveryListener();
-		nsdManager.discoverServices("_http._tcp", NsdManager.PROTOCOL_DNS_SD, discoveryListener);
-
-
-		Pinger pinger = new Pinger();
-		pinger.setOnPingListener(new Pinger.OnPingListener() {
-			@Override
-			public void onPingSuccess() {
-				Looper.prepare();
-				Handler handler = new Handler(Looper.getMainLooper());
-				handler.post(() -> Toast.makeText(getApplicationContext(), "Ping'd KeepHome!", Toast.LENGTH_SHORT).show());
+		AsyncTask.execute(() -> {
+			try {
+				jmDNS = JmDNS.create(GetLocalIP());
+				jmDNS.addServiceListener("_http._tcp.local.", new keephomeListener());
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-
-			@Override
-			public void onPingFailure() { }
-
-			@Override
-			public void onPingFinish() { }
 		});
-		pinger.pingUntilSucceeded(sharedPreferences.getString("keephome_ip", "192.168.4.1"), 5000);;
 	}
 
 	@Override
@@ -145,6 +128,25 @@ public class MainActivity extends AppCompatActivity {
 			// If we got here, the user's action was not recognized.
 			// Invoke the superclass to handle it.
 			return super.onOptionsItemSelected(item);
+		}
+	}
+
+	private InetAddress GetLocalIP () {
+		try {
+			InetAddress localAddress = InetAddress.getLocalHost();
+			for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
+				NetworkInterface networkInterface = en.nextElement();
+				for (Enumeration<InetAddress> enumIpAddr = networkInterface.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
+					InetAddress inetAddress = enumIpAddr.nextElement();
+					if (!inetAddress.isLinkLocalAddress()) {
+						localAddress = inetAddress;
+					}
+				}
+			}
+			return localAddress;
+		} catch (SocketException | UnknownHostException e) {
+			e.printStackTrace();
+			return null;
 		}
 	}
 
@@ -206,6 +208,18 @@ public class MainActivity extends AppCompatActivity {
 		sendPostRequest(params);
 	}
 
+	private void restartKeepHome () {
+		RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
+		StringRequest restartRequest = new StringRequest(
+				Request.Method.GET,
+				"http://" + sharedPreferences.getString("keephome_ip", "192.168.4.1") + "/restart",
+				null,
+				null
+		);
+		restartRequest.setRetryPolicy(new DefaultRetryPolicy(10000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+		queue.add(restartRequest);
+	}
+
 	private void sendPostRequest (HashMap<String, String> params) {
 		RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
 		final TextView text1 = findViewById(R.id.text);
@@ -215,77 +229,51 @@ public class MainActivity extends AppCompatActivity {
 
 		MainActivity.displayNotification(getApplicationContext(), INFO_CHANNEL, "POST parameters", finalMap.toString());
 
-		String ip;
-		if (address != null) {
-			ip = address.getHostAddress();
-		} else {
-			ip = "192.168.4.1";
-		}
-
 		StringRequest postRequest = new StringRequest(
 				Request.Method.POST,
-				"http://" + ip + "/post",
-				new Response.Listener<String>() {
-					@Override
-					public void onResponse (String response) {
-						swipeRefreshLayout.setRefreshing(false);
-						try {
-							JSONObject jsonObject = new JSONObject(response);
-							final JSONObject finalJSONObject = jsonObject;
-							runOnUiThread(new Runnable() {
-								@Override
-								public void run () {
-									try {
-										text1.setText(finalJSONObject.getString("time"));
-										text2.setText(finalJSONObject.getString("additional"));
-									} catch (JSONException e) {
-										e.printStackTrace();
-									}
-								}
-							});
-							if (jsonObject.has("WiFimode")) {
-								String temp = jsonObject.getString("WiFimode");
-								unregisterPrefListener();
-								if (temp.equals("1")) {
-									sharedPreferences.edit().putBoolean("wifi_ap_mode", true).apply();
-								} else {
-									sharedPreferences.edit().putBoolean("wifi_ap_mode", false).apply();
-								}
-								registerPrefListener();
-							}
-							if (jsonObject.has("SSID")) {
-								unregisterPrefListener();
-								sharedPreferences.edit().putString("wifissid", jsonObject.getString("SSID")).apply();
-								registerPrefListener();
-							}
-							if (jsonObject.has("password")) {
-								unregisterPrefListener();
-								sharedPreferences.edit().putString("wifipassword", jsonObject.getString("password")).apply();
-								registerPrefListener();
-							}
-						} catch (final JSONException e) {
-							e.printStackTrace();
-							runOnUiThread(new Runnable() {
-								@Override
-								public void run () {
-									text1.setText(e.toString());
-								}
-							});
-						}
-					}
-				},
-				new Response.ErrorListener() {
-					@Override
-					public void onErrorResponse (final VolleyError error) {
-						runOnUiThread(new Runnable() {
-							@Override
-							public void run () {
-								text1.setText(error.toString());
-								swipeRefreshLayout.setRefreshing(false);
+				"http://" + sharedPreferences.getString("keephome_ip", "192.168.4.1") + "/post",
+				response -> {
+					swipeRefreshLayout.setRefreshing(false);
+					try {
+						JSONObject jsonObject = new JSONObject(response);
+						final JSONObject finalJSONObject = jsonObject;
+						runOnUiThread(() -> {
+							try {
+								text1.setText(finalJSONObject.getString("time"));
+								text2.setText(finalJSONObject.getString("additional"));
+							} catch (JSONException e) {
+								e.printStackTrace();
 							}
 						});
+						if (jsonObject.has("WiFimode")) {
+							String temp = jsonObject.getString("WiFimode");
+							unregisterPrefListener();
+							if (temp.equals("1")) {
+								sharedPreferences.edit().putBoolean("wifi_ap_mode", true).apply();
+							} else {
+								sharedPreferences.edit().putBoolean("wifi_ap_mode", false).apply();
+							}
+							registerPrefListener();
+						}
+						if (jsonObject.has("SSID")) {
+							unregisterPrefListener();
+							sharedPreferences.edit().putString("wifissid", jsonObject.getString("SSID")).apply();
+							registerPrefListener();
+						}
+						if (jsonObject.has("password")) {
+							unregisterPrefListener();
+							sharedPreferences.edit().putString("wifipassword", jsonObject.getString("password")).apply();
+							registerPrefListener();
+						}
+					} catch (final JSONException e) {
+						e.printStackTrace();
+						runOnUiThread(() -> text1.setText(e.toString()));
 					}
-				}
+				},
+				error -> runOnUiThread(() -> {
+					text1.setText(error.toString());
+					swipeRefreshLayout.setRefreshing(false);
+				})
 		) {
 			@Override
 			protected Map<String, String> getParams () {
@@ -295,9 +283,7 @@ public class MainActivity extends AppCompatActivity {
 				return finalMap;
 			}
 		};
-		postRequest.setRetryPolicy(new DefaultRetryPolicy(10000,
-				DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-				DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+		postRequest.setRetryPolicy(new DefaultRetryPolicy(10000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 		queue.add(postRequest);
 	}
 
@@ -329,125 +315,75 @@ public class MainActivity extends AppCompatActivity {
 
 	}
 
-	private void updateAddress (final NsdServiceInfo serviceInfo) {
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run () {
-				if (serviceInfo != null) {
-					keephomeServiceInfo = serviceInfo;
-					address = serviceInfo.getHost();
-					sharedPreferences.edit().putString("keephome_ip", serviceInfo.getHost().getHostAddress()).apply();
-					connection_status_text.setText(R.string.online);
-					connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
-				} else {
-					keephomeServiceInfo = null;
-					address = null;
-					connection_status_text.setText(R.string.offline);
-					connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorAccent));
-				}
+	private void updateDNS (ServiceEvent event) {
+		runOnUiThread(() -> {
+			if (event != null) {
+				sharedPreferences.edit().putString("keephome_ip", event.getInfo().getHostAddresses()[0]).apply();
+				connection_status_text.setText(R.string.online);
+				connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
+			} else {
+				connection_status_text.setText(R.string.offline);
+				connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorAccent));
 			}
 		});
 	}
 
-	private class resolveListener implements NsdManager.ResolveListener {
-		// Called when the resolve fails. Use the error code to debug.
+	private class keephomeListener implements ServiceListener {
+
 		@Override
-		public void onResolveFailed (NsdServiceInfo nsdServiceInfo, int errorCode) {
-			// Called when the resolve fails. Use the error code to debug.
-			Log.e("KeepHome", "DNS resolve failed. Code:" + errorCode);
+		public void serviceAdded(ServiceEvent event) {
+			Log.d("mDNS listener", "Service found: " + event.getInfo());
+			if (event.getName().equals("KeepHome")) {
+				jmDNS.requestServiceInfo(event.getType(), event.getName());
+			}
 		}
 
 		@Override
-		public void onServiceResolved (NsdServiceInfo nsdServiceInfo) {
-			if (nsdServiceInfo.getServiceName().contains("KeepHome")) {
-				updateAddress(nsdServiceInfo);
-				getAllData();
+		public void serviceRemoved(ServiceEvent event) {
+			Log.d("mDNS listener", "Service lost: " + event.getInfo());
+		}
+
+		@Override
+		public void serviceResolved(ServiceEvent event) {
+			Log.d("mDNS listener", "Service rseolved: " + event.getInfo());
+			if (event.getName().equals("KeepHome")) {
+				updateDNS(event);
 			}
 		}
 	}
 
-	public void initializeDiscoveryListener () {
-
-		// Instantiate a new DiscoveryListener
-		discoveryListener = new NsdManager.DiscoveryListener() {
-
-			// Called as soon as service discovery begins.
-			@Override
-			public void onDiscoveryStarted (String regType) {
-				Log.d("KeepHome", "Service discovery started");
-			}
-
-			@Override
-			public void onServiceFound (NsdServiceInfo service) {
-				nsdManager.resolveService(service, new resolveListener());
-				// A service was found! Do something with it.
-				Log.d("KeepHome", "Service discovery success: " + service);
-			}
-
-			@Override
-			public void onServiceLost (NsdServiceInfo service) {
-				if (service.getServiceName().contains("KeepHome")) {
-					updateAddress(null);
-				}
-				// When the network service is no longer available.
-				// Internal bookkeeping code goes here.
-				Log.e("KeepHome", "Service lost: " + service);
-			}
-
-			@Override
-			public void onDiscoveryStopped (String serviceType) {
-				Log.i("KeepHome", "Discovery stopped: " + serviceType);
-			}
-
-			@Override
-			public void onStartDiscoveryFailed (String serviceType, int errorCode) {
-				Log.e("KeepHome", "Discovery failed, code: " + errorCode);
-				nsdManager.stopServiceDiscovery(this);
-			}
-
-			@Override
-			public void onStopDiscoveryFailed (String serviceType, int errorCode) {
-				Log.e("KeepHome", "Discovery failed, code: " + errorCode);
-				nsdManager.stopServiceDiscovery(this);
-			}
-		};
-	}
-
-	public SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
-		@Override
-		public void onSharedPreferenceChanged (SharedPreferences sharedPreferences, String s) {
-			if (s.equals("notifications")) {
-				Log.i("KeepHome", "Notifications were updated to: " + sharedPreferences.getBoolean(s, true));
-				if (sharedPreferences.getBoolean(s, true))
-					Toast.makeText(getApplicationContext(), "Notifications enabled", Toast.LENGTH_SHORT).show();
-				else
-					Toast.makeText(getApplicationContext(), "Notifications disabled", Toast.LENGTH_SHORT).show();
-			}
-			if (s.equals("sync_interval")) {
-				int value = Integer.parseInt(sharedPreferences.getString("sync_interval", "5"));
-				Log.i("KeepHome", "Sync interval was updated to: " + value);
-				AlarmReceiver alarmReceiver = new AlarmReceiver();
-				alarmReceiver.cancelAlarm(getApplicationContext());
-				alarmReceiver.setAlarm(getApplicationContext(), value);
-				Toast.makeText(getApplicationContext(), "Set sync interval to " + value + " minutes", Toast.LENGTH_LONG).show();
-			}
-			if (s.equals("wifi_ap_mode")) {
-				boolean wifimode = sharedPreferences.getBoolean("wifi_ap_mode", true);
-				if (wifimode)
-					setWiFimode(1);
-				else
-					setWiFimode(0);
-			}
-			if (s.equals("wifissid")) {
-				setSSID(sharedPreferences.getString("wifissid", "KeepHome"));
-			}
-			if (s.equals("wifipassword")) {
-				String password = sharedPreferences.getString("wifipassword", "");
-				if (password.length() >= 8)
-					setPassword(password);
-				else
-					Toast.makeText(getApplicationContext(), "Password must be at least 8 characters!", Toast.LENGTH_LONG).show();
-			}
+	public SharedPreferences.OnSharedPreferenceChangeListener listener = (sharedPreferences, s) -> {
+		if (s.equals("notifications")) {
+			Log.i("KeepHome", "Notifications were updated to: " + sharedPreferences.getBoolean(s, true));
+			if (sharedPreferences.getBoolean(s, true))
+				Toast.makeText(getApplicationContext(), "Notifications enabled", Toast.LENGTH_SHORT).show();
+			else
+				Toast.makeText(getApplicationContext(), "Notifications disabled", Toast.LENGTH_SHORT).show();
+		}
+		if (s.equals("sync_interval")) {
+			int value = Integer.parseInt(sharedPreferences.getString("sync_interval", "5"));
+			Log.i("KeepHome", "Sync interval was updated to: " + value);
+			AlarmReceiver alarmReceiver = new AlarmReceiver();
+			alarmReceiver.cancelAlarm(getApplicationContext());
+			alarmReceiver.setAlarm(getApplicationContext(), value);
+			Toast.makeText(getApplicationContext(), "Set sync interval to " + value + " minutes", Toast.LENGTH_LONG).show();
+		}
+		if (s.equals("wifi_ap_mode")) {
+			boolean wifimode = sharedPreferences.getBoolean("wifi_ap_mode", true);
+			if (wifimode)
+				setWiFimode(1);
+			else
+				setWiFimode(0);
+		}
+		if (s.equals("wifissid")) {
+			setSSID(sharedPreferences.getString("wifissid", "KeepHome"));
+		}
+		if (s.equals("wifipassword")) {
+			String password = sharedPreferences.getString("wifipassword", "");
+			if (password.length() >= 8)
+				setPassword(password);
+			else
+				Toast.makeText(getApplicationContext(), "Password must be at least 8 characters!", Toast.LENGTH_LONG).show();
 		}
 	};
 
