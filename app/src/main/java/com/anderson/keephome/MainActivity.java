@@ -341,11 +341,11 @@ public class MainActivity extends AppCompatActivity {
             if (event != null) {
                 sharedPreferences.edit().putString("keephome_ip", event.getInfo().getHostAddresses()[0]).apply();
                 connection_status_text.setText(R.string.online);
-                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
+                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.onlineText));
             } else {
                 sharedPreferences.edit().putString("keephome_ip", "192.168.4.1").apply();
                 connection_status_text.setText(R.string.offline);
-                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorAccent));
+                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.offlineText));
             }
         });
     }
@@ -415,13 +415,13 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 sharedPreferences.edit().putString("keephome_ip", packet.getAddress().getHostAddress()).apply();
                 connection_status_text.setText(R.string.online);
-                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
+                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.onlineText));
             });
         } catch (SocketTimeoutException socketTimeoutException) {
             socket.close();
             runOnUiThread(() -> {
                 connection_status_text.setText(R.string.offline);
-                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorAccent));
+                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.offlineText));
             });
             Log.i("NETWORK", "No response");
         } catch (IOException ioe) {

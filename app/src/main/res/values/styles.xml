@@ -1,11 +1,22 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Make the app responsible for drawing status bar and navigation bar backgrounds. -->
+        <item name="android:windowDrawsSystemBarBackgrounds" tools:targetApi="lollipop">true</item>
+        <!-- Change the status bar background to whatever you want. -->
+        <item name="android:statusBarColor" tools:targetApi="lollipop">@color/primary</item>
+
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primaryDark</item>
+        <item name="colorAccent">@color/accent</item>
+    </style>
+
+    <style name="PreferenceTheme" parent="AppTheme">
+        <!-- Change the status bar background to whatever you want. -->
+        <item name="android:statusBarColor" tools:targetApi="lollipop">?android:colorBackground</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
 </resources>

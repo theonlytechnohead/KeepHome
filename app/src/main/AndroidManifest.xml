@@ -19,14 +19,16 @@
 
         <uses-library android:name="org.apache.http.legacy" android:required="false"/>
 
-        <activity android:name="com.anderson.keephome.MainActivity">
+        <activity android:name="com.anderson.keephome.MainActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.anderson.keephome.Preferences" android:label="@string/preferences_activity_name">
+        <activity android:name="com.anderson.keephome.Preferences" android:label="@string/preferences_activity_name"
+            android:theme="@style/PreferenceTheme">
             <meta-data android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.anderson.keephome.MainActivity"/>
         </activity>

@@ -10,38 +10,44 @@
         android:id="@+id/action_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
         android:background="?attr/colorPrimary"
         android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme" />
-
-    <TextView
-        android:id="@+id/connection_status_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Offline"
-        android:textAlignment="center"
-        app:layout_constraintTop_toBottomOf="@id/action_bar"
+        android:theme="?attr/actionBarTheme"
+        app:titleTextColor="@color/white"
+        app:title="@string/app_name"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"/>
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/connection_status_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_gravity="center"
+            tools:text="Offline" />
+
+    </androidx.appcompat.widget.Toolbar>
 
     <TextView
         android:id="@+id/text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintTop_toBottomOf="@id/connection_status_text"
+        android:paddingHorizontal="20dp"
         app:layout_constraintBottom_toTopOf="@id/text2"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/action_bar"
+        tools:text="Hello World!" />
 
     <TextView
         android:id="@+id/text2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="20sp"
+        tools:text="Output goes here"
         app:layout_constraintTop_toBottomOf="@id/text"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -61,6 +67,7 @@
         android:id="@+id/swiper"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
+        tools:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -70,18 +77,5 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-    <!--
-    <Button
-        android:id="@+id/button_settings_old"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="15sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        android:text="@string/settings_button_text"
-        android:onClick="settingsButton_onClick"/>
-        -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>
