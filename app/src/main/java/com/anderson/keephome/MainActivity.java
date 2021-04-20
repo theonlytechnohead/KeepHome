@@ -85,13 +85,7 @@ public class MainActivity extends AppCompatActivity {
         swipeRefreshLayout = findViewById(R.id.swiper);
 //        swipeRefreshLayout.setOnRefreshListener(this::getData);
         swipeRefreshLayout.setOnRefreshListener(() -> {
-            AsyncTask.execute(() -> {
-                try {
-                    sendUDPRequest();
-                } catch (UnknownHostException e) {
-                    e.printStackTrace();
-                }
-            });
+            AsyncTask.execute(this::sendUDPRequest);
             swipeRefreshLayout.setRefreshing(false);
         });
         findViewById(R.id.restartButton).setOnClickListener(v -> MainActivity.this.restartKeepHome());
@@ -115,9 +109,6 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         });
-
-        udpTimer = new Timer("UDP timer");
-        udpTimer.schedule(new UDPTimerTask(), 1000, 5000);
 
     }
 
@@ -237,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
                 null,
                 null
         );
-        restartRequest.setRetryPolicy(new DefaultRetryPolicy(10000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        restartRequest.setRetryPolicy(new DefaultRetryPolicy(1000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(restartRequest);
     }
 
@@ -336,17 +327,17 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void updateDNS(ServiceEvent event) {
+    private void setOnlineText() {
         runOnUiThread(() -> {
-            if (event != null) {
-                sharedPreferences.edit().putString("keephome_ip", event.getInfo().getHostAddresses()[0]).apply();
-                connection_status_text.setText(R.string.online);
-                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.onlineText));
-            } else {
-                sharedPreferences.edit().putString("keephome_ip", "192.168.4.1").apply();
-                connection_status_text.setText(R.string.offline);
-                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.offlineText));
-            }
+            connection_status_text.setText(R.string.online);
+            connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.onlineText));
+        });
+    }
+
+    private void setOfflineText() {
+        runOnUiThread(() -> {
+            connection_status_text.setText(R.string.offline);
+            connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.offlineText));
         });
     }
 
@@ -364,7 +355,10 @@ public class MainActivity extends AppCompatActivity {
         public void serviceRemoved(ServiceEvent event) {
             Log.d("mDNS listener", "Service lost: " + event.getInfo());
             if (event.getName().equals("KeepHome")) {
-                updateDNS(null);
+                udpTimer.cancel();
+                udpTimer = null;
+                setOfflineText();
+                sharedPreferences.edit().putString("keephome_ip", "192.168.4.1").apply();
             }
         }
 
@@ -372,21 +366,32 @@ public class MainActivity extends AppCompatActivity {
         public void serviceResolved(ServiceEvent event) {
             Log.d("mDNS listener", "Service resolved: " + event.getInfo());
             if (event.getName().equals("KeepHome")) {
-                updateDNS(event);
-                try {
-                    sendUDPRequest();
-                } catch (UnknownHostException e) {
-                    e.printStackTrace();
-                }
+                sharedPreferences.edit().putString("keephome_ip", event.getInfo().getHostAddresses()[0]).apply();
+                foundKeepHome();
             }
         }
     }
 
-    public void sendUDPRequest() throws UnknownHostException {
+    private void foundKeepHome() {
+        setOnlineText();
+        if (udpTimer == null) {
+            udpTimer = new Timer("UDP timer");
+            udpTimer.schedule(new UDPTimerTask(), 5000, 5000);
+        }
+    }
+
+    public void sendUDPRequest() {
         String message = "OH HI LOL";
         byte[] sendBuffer = message.getBytes();
+        InetAddress keephome_ip;
+        try {
+            keephome_ip = InetAddress.getByName(sharedPreferences.getString("keephome_ip", "192.168.4.1"));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+            return;
+        }
 
-        DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, InetAddress.getByName(sharedPreferences.getString("keephome_ip", "192.168.4.1")), 8874);
+        DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, keephome_ip, 8874);
         //packet = new DatagramPacket( sendBuffer, sendBuffer.length, address, port );
 
         DatagramSocket socket = null;
@@ -412,17 +417,17 @@ public class MainActivity extends AppCompatActivity {
             );
             socket.close();
             Log.i("NETWORK", "KeepHome said: " + dataString);
-            runOnUiThread(() -> {
-                sharedPreferences.edit().putString("keephome_ip", packet.getAddress().getHostAddress()).apply();
-                connection_status_text.setText(R.string.online);
-                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.onlineText));
-            });
+            sharedPreferences.edit().putString("keephome_ip", packet.getAddress().getHostAddress()).apply();
+            if (udpTimer != null) {
+                setOnlineText();
+            } else {
+                foundKeepHome();
+            }
         } catch (SocketTimeoutException socketTimeoutException) {
             socket.close();
-            runOnUiThread(() -> {
-                connection_status_text.setText(R.string.offline);
-                connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.offlineText));
-            });
+            udpTimer.cancel();
+            udpTimer = null;
+            setOfflineText();
             Log.i("NETWORK", "No response");
         } catch (IOException ioe) {
             Log.d("NETWORK", "Failed to send UDP packet due to IOException: " + ioe.getMessage());
@@ -477,6 +482,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        if (udpTimer != null) {
+            udpTimer.cancel();
+            udpTimer = null;
+        }
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         registerPrefListener();
@@ -491,11 +505,7 @@ public class MainActivity extends AppCompatActivity {
     private class UDPTimerTask extends TimerTask {
         @Override
         public void run() {
-            try {
-                sendUDPRequest();
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            }
+            sendUDPRequest();
         }
     }
 }
