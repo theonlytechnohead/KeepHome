@@ -86,14 +86,13 @@ public class MainActivity extends AppCompatActivity {
 //        swipeRefreshLayout.setOnRefreshListener(this::getData);
         swipeRefreshLayout.setOnRefreshListener(() -> {
             AsyncTask.execute(this::sendUDPRequest);
-            swipeRefreshLayout.setRefreshing(false);
         });
         findViewById(R.id.restartButton).setOnClickListener(v -> MainActivity.this.restartKeepHome());
         connection_status_text = findViewById(R.id.connection_status_text);
 
-        Toolbar actionBar = findViewById(R.id.action_bar);
-        setSupportActionBar(actionBar);
-        actionBar.setTitleTextColor(ContextCompat.getColor(getApplicationContext(), R.color.white));
+        Toolbar toolBar = findViewById(R.id.action_bar);
+        setSupportActionBar(toolBar);
+        toolBar.setTitleTextColor(ContextCompat.getColor(getApplicationContext(), R.color.white));
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         int syncInterval = Integer.parseInt(sharedPreferences.getString("sync_interval", "5"));
@@ -116,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
     public void onStart() {
         super.onStart();
         registerPrefListener();
+        setOfflineText();
     }
 
     @Override
@@ -397,7 +397,7 @@ public class MainActivity extends AppCompatActivity {
         DatagramSocket socket = null;
         try {
             socket = new DatagramSocket();
-            socket.setSoTimeout(200);
+            socket.setSoTimeout(1000);
         } catch (SocketException e) {
             e.printStackTrace();
         }
@@ -423,12 +423,20 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 foundKeepHome();
             }
+            runOnUiThread(() -> {
+                swipeRefreshLayout.setRefreshing(false);
+            });
         } catch (SocketTimeoutException socketTimeoutException) {
-            socket.close();
-            udpTimer.cancel();
-            udpTimer = null;
-            setOfflineText();
             Log.i("NETWORK", "No response");
+            socket.close();
+            if (udpTimer != null) {
+                udpTimer.cancel();
+                udpTimer = null;
+            }
+            setOfflineText();
+            runOnUiThread(() -> {
+                swipeRefreshLayout.setRefreshing(false);
+            });
         } catch (IOException ioe) {
             Log.d("NETWORK", "Failed to send UDP packet due to IOException: " + ioe.getMessage());
             ioe.printStackTrace();
