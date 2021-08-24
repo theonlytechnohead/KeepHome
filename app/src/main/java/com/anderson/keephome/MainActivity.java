@@ -18,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.NotificationCompat;
@@ -31,6 +32,8 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.github.druk.rx2dnssd.Rx2Dnssd;
+import com.github.druk.rx2dnssd.Rx2DnssdBindable;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -50,9 +53,9 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.jmdns.JmDNS;
-import javax.jmdns.ServiceEvent;
-import javax.jmdns.ServiceListener;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -73,7 +76,9 @@ public class MainActivity extends AppCompatActivity {
 
     AlarmReceiver alarmReceiver;
 
-    JmDNS jmDNS;
+    @Nullable
+    Disposable browseDisposable;
+    Rx2Dnssd rx2dnssd;
     Timer udpTimer;
 
     SharedPreferences sharedPreferences;
@@ -115,14 +120,7 @@ public class MainActivity extends AppCompatActivity {
         alarmReceiver = new AlarmReceiver();
         alarmReceiver.setAlarm(this, syncInterval);
 
-        AsyncTask.execute(() -> {
-            try {
-                jmDNS = JmDNS.create(GetLocalIP());
-                jmDNS.addServiceListener("_http._tcp.local.", new keephomeListener());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+        rx2dnssd = new Rx2DnssdBindable(getApplicationContext());
 
     }
 
@@ -158,9 +156,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        closeOptionsMenu();
         if (item.getItemId() == R.id.button_settings) {
             // User chose the "Settings" item, show the app settings UI...
-            Intent preferencesIntent = new Intent(getApplicationContext(), Preferences.class);
+            Intent preferencesIntent = new Intent(MainActivity.this, Preferences.class);
             startActivity(preferencesIntent);
             return true;
         } else if (item.getItemId() == R.id.menu_refresh) {
@@ -172,6 +171,36 @@ public class MainActivity extends AppCompatActivity {
             // Invoke the superclass to handle it.
             return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void startBrowse() {
+        browseDisposable = rx2dnssd.browse("_http._tcp", "local.")
+                .compose(rx2dnssd.resolve())
+                .compose(rx2dnssd.queryIPV4Records())
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(service -> {
+                    if (service.getServiceName().contains("KeepHome")) {
+                        if (service.isLost()) {
+                            Log.d("Rx2DNS-SD", "Lost: " + service.toString());
+                            udpTimer.cancel();
+                            udpTimer = null;
+                            setOfflineText();
+                            sharedPreferences.edit().putString("keephome_ip", "192.168.4.1").apply();
+                        } else {
+                            Log.d("Rx2DNS-SD", "Found: " + service.toString());
+                            sharedPreferences.edit().putString("keephome_ip", service.getInet4Address().getHostAddress()).apply();
+                            foundKeepHome();
+                        }
+                    }
+                }, throwable -> Log.e("Rx2DNS-SD", "error", throwable));
+    }
+
+    private void stopBrowse() {
+        if (browseDisposable != null) {
+            browseDisposable.dispose();
+        }
+        browseDisposable = null;
     }
 
     private InetAddress GetLocalIP() {
@@ -372,42 +401,11 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private class keephomeListener implements ServiceListener {
-
-        @Override
-        public void serviceAdded(ServiceEvent event) {
-            Log.d("mDNS listener", "Service found: " + event.getInfo());
-            if (event.getName().equals("KeepHome")) {
-                jmDNS.requestServiceInfo(event.getType(), event.getName());
-            }
-        }
-
-        @Override
-        public void serviceRemoved(ServiceEvent event) {
-            Log.d("mDNS listener", "Service lost: " + event.getInfo());
-            if (event.getName().equals("KeepHome")) {
-                udpTimer.cancel();
-                udpTimer = null;
-                setOfflineText();
-                sharedPreferences.edit().putString("keephome_ip", "192.168.4.1").apply();
-            }
-        }
-
-        @Override
-        public void serviceResolved(ServiceEvent event) {
-            Log.d("mDNS listener", "Service resolved: " + event.getInfo());
-            if (event.getName().equals("KeepHome")) {
-                sharedPreferences.edit().putString("keephome_ip", event.getInfo().getHostAddresses()[0]).apply();
-                foundKeepHome();
-            }
-        }
-    }
-
     private void foundKeepHome() {
         setOnlineText();
         if (udpTimer == null) {
             udpTimer = new Timer("UDP timer");
-            udpTimer.schedule(new UDPTimerTask(), 5000, 5000);
+//            udpTimer.schedule(new UDPTimerTask(), 5000, 5000);
         }
     }
 
@@ -527,18 +525,27 @@ public class MainActivity extends AppCompatActivity {
             udpTimer.cancel();
             udpTimer = null;
         }
+        if (browseDisposable != null) {
+            stopBrowse();
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
         registerPrefListener();
+        if (browseDisposable == null) {
+            startBrowse();
+        }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         unregisterPrefListener();
+        if (browseDisposable != null) {
+            browseDisposable.dispose();
+        }
     }
 
     private class UDPTimerTask extends TimerTask {

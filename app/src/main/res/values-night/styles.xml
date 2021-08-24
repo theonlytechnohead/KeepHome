@@ -14,7 +14,7 @@
         <item name="colorAccent">@color/accent</item>
     </style>
 
-    <style name="PreferenceTheme" parent="KeepHome.Dark">
+    <style name="PreferenceTheme.Dark" parent="KeepHome.Dark">
         <!-- Change the status bar background to whatever you want. -->
         <item name="android:statusBarColor" tools:targetApi="lollipop">?android:colorBackground</item>
         <item name="android:windowLightStatusBar">true</item>
