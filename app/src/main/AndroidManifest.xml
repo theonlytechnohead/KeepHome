@@ -14,12 +14,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
-        android:theme="@style/AppTheme"
+        android:theme="@style/KeepHome"
         tools:ignore="GoogleAppIndexingWarning">
 
         <uses-library android:name="org.apache.http.legacy" android:required="false"/>
 
         <activity android:name="com.anderson.keephome.MainActivity"
+            android:configChanges="uiMode"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

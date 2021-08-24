@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.media.RingtoneManager;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -80,6 +81,20 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Check theme
+        int currentNightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        switch (currentNightMode) {
+            case Configuration.UI_MODE_NIGHT_NO:
+                setTheme(R.style.KeepHome);
+                Log.d("Theme", "Set theme to: light");
+                break;
+            case Configuration.UI_MODE_NIGHT_YES:
+                setTheme(R.style.KeepHome_Dark);
+                Log.d("Theme", "Set theme to: dark");
+                break;
+        }
+
         setContentView(R.layout.activity_main);
 
         swipeRefreshLayout = findViewById(R.id.swiper);
@@ -116,6 +131,22 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         registerPrefListener();
         setOfflineText();
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        int currentNightMode = newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        switch (currentNightMode) {
+            case Configuration.UI_MODE_NIGHT_NO:
+                setTheme(R.style.KeepHome);
+                Log.d("Theme", "Set theme to: light");
+                break;
+            case Configuration.UI_MODE_NIGHT_YES:
+                setTheme(R.style.KeepHome_Dark);
+                Log.d("Theme", "Set theme to: dark");
+                break;
+        }
     }
 
     @Override
