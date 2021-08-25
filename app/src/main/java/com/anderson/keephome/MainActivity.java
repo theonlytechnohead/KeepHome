@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.media.RingtoneManager;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,7 +24,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
@@ -71,8 +69,9 @@ public class MainActivity extends AppCompatActivity {
         channel_to_id.put(INFO_CHANNEL, 2);
     }
 
-    SwipeRefreshLayout swipeRefreshLayout;
     TextView connection_status_text;
+
+    JSONObject currentData;
 
     AlarmReceiver alarmReceiver;
 
@@ -86,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        setContentView(R.layout.activity_main);
         // Check theme
         int currentNightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
         switch (currentNightMode) {
@@ -100,19 +99,18 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
 
-        setContentView(R.layout.activity_main);
-
-        swipeRefreshLayout = findViewById(R.id.swiper);
-//        swipeRefreshLayout.setOnRefreshListener(this::getData);
-        swipeRefreshLayout.setOnRefreshListener(() -> {
-            AsyncTask.execute(this::sendUDPRequest);
-        });
         findViewById(R.id.restartButton).setOnClickListener(v -> MainActivity.this.restartKeepHome());
         connection_status_text = findViewById(R.id.connection_status_text);
 
         Toolbar toolBar = findViewById(R.id.action_bar);
         setSupportActionBar(toolBar);
         toolBar.setTitleTextColor(ContextCompat.getColor(getApplicationContext(), R.color.white));
+
+//        swipeRefreshLayout = findViewById(R.id.swiper);
+////        swipeRefreshLayout.setOnRefreshListener(this::getData);
+//        swipeRefreshLayout.setOnRefreshListener(() -> {
+//            AsyncTask.execute(this::sendUDPRequest);
+//        });
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         int syncInterval = Integer.parseInt(sharedPreferences.getString("sync_interval", "5"));
@@ -129,6 +127,9 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         registerPrefListener();
         setOfflineText();
+        findViewById(R.id.toolbarFragment).findViewById(R.id.postButton).setOnClickListener(view -> {
+            getAllData();
+        });
     }
 
     @Override
@@ -164,7 +165,6 @@ public class MainActivity extends AppCompatActivity {
             return true;
         } else if (item.getItemId() == R.id.menu_refresh) {
             getAllData();
-            swipeRefreshLayout.setRefreshing(true);
             return true;
         } else {
             // If we got here, the user's action was not recognized.
@@ -305,7 +305,6 @@ public class MainActivity extends AppCompatActivity {
                 Request.Method.POST,
                 "http://" + sharedPreferences.getString("keephome_ip", "192.168.4.1") + "/post",
                 response -> {
-                    swipeRefreshLayout.setRefreshing(false);
                     try {
                         JSONObject jsonObject = new JSONObject(response);
                         final JSONObject finalJSONObject = jsonObject;
@@ -344,7 +343,6 @@ public class MainActivity extends AppCompatActivity {
                 },
                 error -> runOnUiThread(() -> {
                     text1.setText(error.toString());
-                    swipeRefreshLayout.setRefreshing(false);
                 })
         ) {
             @Override
@@ -389,15 +387,15 @@ public class MainActivity extends AppCompatActivity {
 
     private void setOnlineText() {
         runOnUiThread(() -> {
-            connection_status_text.setText(R.string.online);
-            connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.onlineText));
+//            connection_status_text.setText(R.string.online);
+//            connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.onlineText));
         });
     }
 
     private void setOfflineText() {
         runOnUiThread(() -> {
-            connection_status_text.setText(R.string.offline);
-            connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.offlineText));
+//            connection_status_text.setText(R.string.offline);
+//            connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.offlineText));
         });
     }
 
@@ -452,9 +450,6 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 foundKeepHome();
             }
-            runOnUiThread(() -> {
-                swipeRefreshLayout.setRefreshing(false);
-            });
         } catch (SocketTimeoutException socketTimeoutException) {
             Log.i("NETWORK", "No response");
             socket.close();
@@ -463,9 +458,6 @@ public class MainActivity extends AppCompatActivity {
                 udpTimer = null;
             }
             setOfflineText();
-            runOnUiThread(() -> {
-                swipeRefreshLayout.setRefreshing(false);
-            });
         } catch (IOException ioe) {
             Log.d("NETWORK", "Failed to send UDP packet due to IOException: " + ioe.getMessage());
             ioe.printStackTrace();

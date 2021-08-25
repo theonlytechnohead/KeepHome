@@ -48,8 +48,8 @@
 
         <EditTextPreference
             app:key="wifipassword"
-            app:title="WiFi password (8 or more characters!)"
-            app:summary="Password must have at least 8 characters!" />
+            app:title="WiFi password"
+            app:summary="Password should have at least 8 characters" />
 
     </PreferenceCategory>
 
