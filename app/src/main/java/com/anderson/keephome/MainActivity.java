@@ -99,18 +99,10 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
 
-        findViewById(R.id.restartButton).setOnClickListener(v -> MainActivity.this.restartKeepHome());
         connection_status_text = findViewById(R.id.connection_status_text);
-
         Toolbar toolBar = findViewById(R.id.action_bar);
         setSupportActionBar(toolBar);
         toolBar.setTitleTextColor(ContextCompat.getColor(getApplicationContext(), R.color.white));
-
-//        swipeRefreshLayout = findViewById(R.id.swiper);
-////        swipeRefreshLayout.setOnRefreshListener(this::getData);
-//        swipeRefreshLayout.setOnRefreshListener(() -> {
-//            AsyncTask.execute(this::sendUDPRequest);
-//        });
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         int syncInterval = Integer.parseInt(sharedPreferences.getString("sync_interval", "5"));
@@ -127,9 +119,8 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         registerPrefListener();
         setOfflineText();
-        findViewById(R.id.toolbarFragment).findViewById(R.id.postButton).setOnClickListener(view -> {
-            getAllData();
-        });
+        findViewById(R.id.toolbarFragment).findViewById(R.id.postButton).setOnClickListener(view -> getAllData());
+        findViewById(R.id.toolbarFragment).findViewById(R.id.restartButton).setOnClickListener(v -> MainActivity.this.restartKeepHome());
     }
 
     @Override
@@ -228,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
         //getPassword();
         //getData();
         HashMap<String, String> params = new HashMap<>();
-        params.put("WiFimode", "get");
+        params.put("WiFiMode", "get");
         params.put("SSID", "get");
         params.put("password", "get");
         params.put("keepbox", "getdata");
@@ -237,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void getWiFimode() {
         HashMap<String, String> params = new HashMap<>();
-        params.put("WiFimode", "get");
+        params.put("WiFiMode", "get");
         sendPostRequest(params);
     }
 
@@ -261,22 +252,22 @@ public class MainActivity extends AppCompatActivity {
 
     private void setWiFimode(int WiFimode) {
         HashMap<String, String> params = new HashMap<>();
-        params.put("WiFimode", "set");
-        params.put("newWiFimode", String.valueOf(WiFimode));
+        params.put("WiFiMode", "set");
+        params.put("newWiFimode", String.valueOf(WiFimode).trim());
         sendPostRequest(params);
     }
 
     private void setSSID(String SSID) {
         HashMap<String, String> params = new HashMap<>();
         params.put("SSID", "set");
-        params.put("newWiFiSSID", SSID);
+        params.put("newWiFiSSID", SSID.trim());
         sendPostRequest(params);
     }
 
     private void setPassword(String password) {
         HashMap<String, String> params = new HashMap<>();
         params.put("password", "set");
-        params.put("newPassword", password);
+        params.put("newPassword", password.trim());
         sendPostRequest(params);
     }
 
@@ -299,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
 
         final Map<String, String> finalMap = params;
 
-        MainActivity.displayNotification(getApplicationContext(), INFO_CHANNEL, "POST parameters", finalMap.toString());
+//        MainActivity.displayNotification(getApplicationContext(), INFO_CHANNEL, "POST parameters", finalMap.toString());
 
         StringRequest postRequest = new StringRequest(
                 Request.Method.POST,
@@ -347,7 +338,7 @@ public class MainActivity extends AppCompatActivity {
         ) {
             @Override
             protected Map<String, String> getParams() {
-                //Map<String, String> parameters = params;
+//                Map<String, String> parameters = params;
                 // things to get
                 //Toast.makeText(getApplicationContext(), finalMap.toString(), Toast.LENGTH_SHORT).show();
                 return finalMap;
@@ -387,15 +378,15 @@ public class MainActivity extends AppCompatActivity {
 
     private void setOnlineText() {
         runOnUiThread(() -> {
-//            connection_status_text.setText(R.string.online);
-//            connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.onlineText));
+            connection_status_text.setText(R.string.online);
+            connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.onlineText));
         });
     }
 
     private void setOfflineText() {
         runOnUiThread(() -> {
-//            connection_status_text.setText(R.string.offline);
-//            connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.offlineText));
+            connection_status_text.setText(R.string.offline);
+            connection_status_text.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.offlineText));
         });
     }
 
