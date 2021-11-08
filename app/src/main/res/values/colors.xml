@@ -4,6 +4,7 @@
     <color name="primaryDark">#00838F</color>
     <color name="accent">#2196F3</color>
     <color name="white">#FFFFFF</color>
+    <color name="dark">#333333</color>
 
     <color name="onlineText">#76FF03</color>
     <color name="offlineText">#FF3D00</color>
