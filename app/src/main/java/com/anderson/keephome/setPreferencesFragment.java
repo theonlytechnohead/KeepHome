@@ -12,12 +12,15 @@ public class setPreferencesFragment extends PreferenceFragmentCompat {
 		setPreferencesFromResource(R.xml.preferences, rootKey);
 
 		findPreference("wifipassword").setSummaryProvider(preference -> {
-			EditTextPreference textPreference = (EditTextPreference) preference;
-			if (textPreference.getText().length() >= 8) {
-				return "Password is at least 8 characters";
-			} else {
-				return "Password should have at least 8 characters";
-			}
-		});
+				EditTextPreference textPreference = (EditTextPreference) preference;
+				if (textPreference.getText() != null) {
+					if (textPreference.getText().length() >= 8) {
+						return "Password is at least 8 characters";
+					} else {
+						return "Password should have at least 8 characters";
+					}
+				}
+				return "Not set";
+			});
 	}
 }
