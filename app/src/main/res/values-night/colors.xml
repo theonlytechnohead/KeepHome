@@ -2,8 +2,9 @@
 <resources>
     <color name="primary">#004F52</color>
     <color name="primaryDark">#00ACC1</color>
-    <color name="accent">#2196F3</color>
+    <color name="accent">#1667A6</color>
     <color name="white">#FFFFFF</color>
+    <color name="dark">#333333</color>
 
     <color name="onlineText">#76FF03</color>
     <color name="offlineText">#FF3D00</color>

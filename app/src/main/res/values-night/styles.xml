@@ -6,7 +6,8 @@
         <item name="android:windowDrawsSystemBarBackgrounds" tools:targetApi="lollipop">true</item>
         <!-- Change the status bar background to whatever you want. -->
         <item name="android:statusBarColor" tools:targetApi="lollipop">@color/primary</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/dark</item>
+        <item name="android:windowLightStatusBar">false</item>
 
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/primary</item>
@@ -17,7 +18,7 @@
     <style name="PreferenceTheme.Dark" parent="KeepHome.Dark">
         <!-- Change the status bar background to whatever you want. -->
         <item name="android:statusBarColor" tools:targetApi="lollipop">?android:colorBackground</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
 </resources>
