@@ -12,14 +12,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
 import androidx.compose.material.Switch
+import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -174,6 +172,57 @@ class SettingsActivity : ComponentActivity() {
     }
 
     @Composable
+    fun TextSetting(
+        title: String,
+        text: String,
+        save: (text: String) -> Unit
+    ) {
+        val showDialog = remember { mutableStateOf(false) }
+        if (showDialog.value) {
+            TextDialog(
+                title = title,
+                text = text,
+                save = { save(it) },
+                onDismiss = { showDialog.value = false }
+            )
+        }
+        Setting(
+            title = title,
+            description = text,
+            onClick = { showDialog.value = true }
+        )
+    }
+
+    @Composable
+    fun TextDialog(
+        title: String,
+        text: String,
+        save: (text: String) -> Unit,
+        onDismiss: () -> Unit
+    ) {
+        var textField by remember { mutableStateOf(text) }
+        AlertDialog(
+            title = { Text(text = title) },
+            text = {
+                TextField(
+                    value = textField,
+                    onValueChange = {
+                        textField = it
+                        save(it)
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(text = "OK")
+                }
+            },
+            onDismissRequest = onDismiss,
+            dismissButton = {}
+        )
+    }
+
+    @Composable
     fun HorizontalLine() {
         Row(Modifier.padding(0.dp, 5.dp)) {
             Divider(
@@ -226,7 +275,12 @@ class SettingsActivity : ComponentActivity() {
         ) {
             scope.launch { settings.setAPMode(it) }
         }
-        Setting(title = "WiFi name (SSID)", description = "<Name here>")
+        TextSetting(
+            title = "WiFi name (SSID)",
+            text = settings.getSSID.collectAsState(initial = "KeepHome").value,
+        ) {
+            scope.launch { settings.setSSID(it) }
+        }
         Setting(title = "WiFi password", description = "Password is at least 8 characters")
     }
 
