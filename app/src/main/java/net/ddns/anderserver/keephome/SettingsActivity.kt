@@ -306,7 +306,7 @@ class SettingsActivity : ComponentActivity() {
             },
             onDismissRequest = {
                 if (verify(textField))
-                    onDismiss
+                    onDismiss()
             },
             dismissButton = {}
         )
