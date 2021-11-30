@@ -1,14 +1,11 @@
 package net.ddns.anderserver.keephome
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
-import android.widget.ToggleButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.ScrollableState
-import androidx.compose.foundation.gestures.rememberScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.ddns.anderserver.keephome.ui.theme.KeephomeTheme
+
 
 class SettingsActivity : ComponentActivity() {
 
@@ -212,7 +210,14 @@ class SettingsActivity : ComponentActivity() {
     @Composable
     fun SupportSettings() {
         SectionTitle(title = "Support")
-        Setting(title = "Website", description = "Submit issues and requests")
+        Setting(title = "Website", description = "Submit issues and requests", onClick = {
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://anderserver.ddns.net/blog/2021/5")
+                )
+            )
+        })
     }
 
 }
