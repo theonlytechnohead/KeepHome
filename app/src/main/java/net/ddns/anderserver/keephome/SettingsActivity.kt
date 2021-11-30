@@ -5,8 +5,14 @@ import android.widget.ToggleButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
 import androidx.compose.material.Switch
 import androidx.compose.material.icons.Icons
@@ -59,7 +65,10 @@ class SettingsActivity : ComponentActivity() {
 
     @Composable
     fun SettingsContent() {
-        Column {
+        val offset = remember { mutableStateOf(0f) }
+        Column(
+            Modifier.verticalScroll(rememberScrollState())
+        ) {
             SyncSettings()
             HorizontalLine()
             WiFiSettings()
@@ -74,7 +83,7 @@ class SettingsActivity : ComponentActivity() {
     fun SectionTitle(title: String) {
         Row(
             Modifier
-                .padding(60.dp, 15.dp, 0.dp, 10.dp)
+                .padding(80.dp, 15.dp, 0.dp, 10.dp)
                 .fillMaxWidth()
         ) {
             Text(
@@ -111,8 +120,9 @@ class SettingsActivity : ComponentActivity() {
         ) {
             Column(
                 Modifier
-                    .padding(60.dp, 18.dp, 0.dp, 18.dp)
-                    .weight(1f, fill = false)) {
+                    .padding(80.dp, 18.dp, 0.dp, 18.dp)
+                    .weight(1f, fill = false)
+            ) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
@@ -142,7 +152,7 @@ class SettingsActivity : ComponentActivity() {
         Setting(
             title = title,
             description = description,
-            onClick = {toggled.value = !toggled.value}
+            onClick = { toggled.value = !toggled.value }
         ) {
             Switch(checked = toggled.value, onCheckedChange = { toggled.value = it })
         }
@@ -157,14 +167,14 @@ class SettingsActivity : ComponentActivity() {
         }
     }
 
-    @Preview
-    @Composable
-    fun ToggleSettingPreview() {
-        ToggleSetting(
-            title = "Demo setting",
-            description = "Description goes here, and this is a really long one too!"
-        )
-    }
+//    @Preview
+//    @Composable
+//    fun ToggleSettingPreview() {
+//        ToggleSetting(
+//            title = "Demo setting",
+//            description = "Description goes here, and this is a really long one too!"
+//        )
+//    }
 
     @Composable
     fun SyncSettings() {
