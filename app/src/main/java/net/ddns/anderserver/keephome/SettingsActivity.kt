@@ -150,18 +150,26 @@ class SettingsActivity : ComponentActivity() {
     @Composable
     fun ToggleSetting(
         title: String,
-        description: String,
+        enabledDescription: String,
+        disabledDescription: String,
         state: Boolean,
         save: (state: Boolean) -> Unit
     ) {
         Setting(
             title = title,
-            description = description,
+            description = if (state) {
+                enabledDescription
+            } else {
+                disabledDescription
+            },
             onClick = {
                 save(!state)
             }
         ) {
-            Switch(checked = state, onCheckedChange = { save(!state) })
+            Switch(
+                checked = state,
+                onCheckedChange = { save(!state) }
+            )
         }
     }
 
@@ -190,7 +198,8 @@ class SettingsActivity : ComponentActivity() {
         SectionTitle(title = "Sync / Notifications")
         ToggleSetting(
             title = "Enable sync notifications",
-            description = "You won't be disturbed by notifications",
+            enabledDescription = "You will receive notifications from the app",
+            disabledDescription = "You won't be disturbed by notifications",
             state = settings.getSyncNotifications.collectAsState(initial = false).value
         ) {
             scope.launch { settings.setSyncNotifications(it) }
@@ -211,7 +220,8 @@ class SettingsActivity : ComponentActivity() {
         SectionTitle(title = "KeepHome WiFi")
         ToggleSetting(
             title = "Access point mode",
-            description = "KeepHome will connect to your own network",
+            enabledDescription = "KeepHome will connect to your own network",
+            disabledDescription = "KeepHome will broadcast its own network",
             state = settings.getAPMode.collectAsState(initial = true).value
         ) {
             scope.launch { settings.setAPMode(it) }
@@ -238,7 +248,6 @@ class SettingsActivity : ComponentActivity() {
             )
         })
     }
-
 
 
 }
