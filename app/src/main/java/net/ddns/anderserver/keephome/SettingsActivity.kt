@@ -93,12 +93,6 @@ class SettingsActivity : ComponentActivity() {
         }
     }
 
-//    @Preview
-//    @Composable
-//    fun SectionTitlePreview() {
-//        SectionTitle(title = "Title goes here")
-//    }
-
     @Composable
     fun Setting(
         title: String,
@@ -175,13 +169,14 @@ class SettingsActivity : ComponentActivity() {
     fun TextSetting(
         title: String,
         text: String,
+        editText: String? = null,
         save: (text: String) -> Unit
     ) {
         val showDialog = remember { mutableStateOf(false) }
         if (showDialog.value) {
             TextDialog(
                 title = title,
-                text = text,
+                text = editText ?: text,
                 save = { save(it) },
                 onDismiss = { showDialog.value = false }
             )
@@ -189,6 +184,56 @@ class SettingsActivity : ComponentActivity() {
         Setting(
             title = title,
             description = text,
+            onClick = { showDialog.value = true }
+        )
+    }
+
+    @Composable
+    fun PasswordSetting(
+        title: String,
+        password: String,
+        validPassword: String,
+        invalidPassword: String,
+        save: (password: String) -> Unit
+    ) {
+        fun checkPassword(password: String): Boolean {
+            return password.length >= 8
+        }
+        TextSetting(
+            title = title,
+            text = if (checkPassword(password)) {
+                validPassword
+            } else {
+                invalidPassword
+            },
+            editText = password,
+            save = save
+        )
+    }
+
+    @Composable
+    fun IPSetting(
+        title: String,
+        ip: String,
+        save: (ip: String) -> Unit
+    ) {
+        fun checkIP(ip: String): Boolean {
+            return Regex("[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}").matches(ip)
+        }
+
+        val showDialog = remember { mutableStateOf(false) }
+        if (showDialog.value) {
+            VerifiableDialog(
+                title = title,
+                text = ip,
+                verify = { checkIP(it) },
+                save = { save(it) },
+                onDismiss = { showDialog.value = false }
+            )
+        }
+        Setting(
+            title = title,
+            description = ip,
             onClick = { showDialog.value = true }
         )
     }
@@ -218,6 +263,51 @@ class SettingsActivity : ComponentActivity() {
                 }
             },
             onDismissRequest = onDismiss,
+            dismissButton = {}
+        )
+    }
+
+    @Composable
+    fun VerifiableDialog(
+        title: String,
+        text: String,
+        verify: (text: String) -> Boolean,
+        save: (text: String) -> Unit,
+        onDismiss: () -> Unit
+    ) {
+        var textField by remember { mutableStateOf(text) }
+        AlertDialog(
+            title = { Text(text = title) },
+            text = {
+                Column {
+                    TextField(
+                        value = textField,
+                        onValueChange = {
+                            textField = it
+                            save(it)
+                        }
+                    )
+                    if (!verify(textField)) {
+                        Spacer(modifier = Modifier.padding(10.dp))
+                        Text(
+                            text = "Invalid IP address!",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                if (verify(textField)) {
+                    TextButton(onClick = onDismiss) {
+                        Text(text = "OK")
+                    }
+                }
+            },
+            onDismissRequest = {
+                if (verify(textField))
+                    onDismiss
+            },
             dismissButton = {}
         )
     }
@@ -256,12 +346,6 @@ class SettingsActivity : ComponentActivity() {
         Setting(title = "Sync interval", description = "5 minutes")
     }
 
-//    @Preview
-//    @Composable
-//    fun SyncPreview() {
-//        SyncSettings()
-//    }
-
     @Composable
     fun WiFiSettings() {
         val settings = SettingsStore(LocalContext.current)
@@ -281,13 +365,24 @@ class SettingsActivity : ComponentActivity() {
         ) {
             scope.launch { settings.setSSID(it) }
         }
-        Setting(title = "WiFi password", description = "Password is at least 8 characters")
+        PasswordSetting(
+            title = "WiFi password",
+            password = settings.getPassword.collectAsState(initial = "123345578").value,
+            validPassword = "Password is at least 8 characters",
+            invalidPassword = "Password must be at least 8 characters"
+        ) {
+            scope.launch { settings.setPassword(it) }
+        }
     }
 
     @Composable
     fun AdvancedSettings() {
+        val settings = SettingsStore(LocalContext.current)
+        val scope = rememberCoroutineScope()
         SectionTitle(title = "Advanced")
-        Setting(title = "KeepHome IP", description = "192.168.4.1")
+        IPSetting(title = "KeepHome IP", ip = "192.168.4.1") {
+            scope.launch { settings.setIP(it) }
+        }
     }
 
     @Composable

@@ -18,6 +18,9 @@ class SettingsStore(private val context: Context) {
 
         val AP_MODE = booleanPreferencesKey("ap_mode")
         val SSID = stringPreferencesKey("ssid")
+        val PASSWORD = stringPreferencesKey("password")
+
+        val IP = stringPreferencesKey("ip")
     }
 
 //    Sync notifications switch
@@ -46,6 +49,8 @@ class SettingsStore(private val context: Context) {
         }
     }
 
+//    SSID name
+
     val getSSID: Flow<String> = context.dataStore.data
         .map {
             it[SSID] ?: "KeepHome"
@@ -54,6 +59,32 @@ class SettingsStore(private val context: Context) {
     suspend fun setSSID(ssid: String) {
         context.dataStore.edit {
             it[SSID] = ssid
+        }
+    }
+
+//    WiFi password
+
+    val getPassword: Flow<String> = context.dataStore.data
+        .map {
+            it[PASSWORD] ?: "12345678"
+        }
+
+    suspend fun setPassword(password: String) {
+        context.dataStore.edit {
+            it[PASSWORD] = password
+        }
+    }
+
+//    IP address
+
+    val getIP: Flow<String> = context.dataStore.data
+        .map {
+            it[IP] ?: "192.168.4.1"
+        }
+
+    suspend fun setIP(ip: String) {
+        context.dataStore.edit {
+            it[IP] = ip
         }
     }
 }
