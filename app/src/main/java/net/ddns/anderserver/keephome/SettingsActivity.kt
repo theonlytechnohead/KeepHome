@@ -17,13 +17,17 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import net.ddns.anderserver.keephome.ui.theme.KeephomeTheme
+import net.ddns.anderserver.keephome.ui.theme.SettingsStore
 
 
 class SettingsActivity : ComponentActivity() {
@@ -63,7 +67,6 @@ class SettingsActivity : ComponentActivity() {
 
     @Composable
     fun SettingsContent() {
-        val offset = remember { mutableStateOf(0f) }
         Column(
             Modifier.verticalScroll(rememberScrollState())
         ) {
@@ -103,7 +106,7 @@ class SettingsActivity : ComponentActivity() {
         title: String,
         description: String,
         onClick: (() -> Unit)? = null,
-        toggle: (@Composable() () -> Unit)? = null
+        toggle: (@Composable () -> Unit)? = null
     ) {
         Row(
             Modifier
@@ -145,14 +148,20 @@ class SettingsActivity : ComponentActivity() {
     }
 
     @Composable
-    fun ToggleSetting(title: String, description: String) {
-        val toggled = remember { mutableStateOf(false) }
+    fun ToggleSetting(
+        title: String,
+        description: String,
+        state: Boolean,
+        save: (state: Boolean) -> Unit
+    ) {
         Setting(
             title = title,
             description = description,
-            onClick = { toggled.value = !toggled.value }
+            onClick = {
+                save(!state)
+            }
         ) {
-            Switch(checked = toggled.value, onCheckedChange = { toggled.value = it })
+            Switch(checked = state, onCheckedChange = { save(!state) })
         }
     }
 
@@ -176,11 +185,16 @@ class SettingsActivity : ComponentActivity() {
 
     @Composable
     fun SyncSettings() {
+        val settings = SettingsStore(LocalContext.current)
+        val scope = rememberCoroutineScope()
         SectionTitle(title = "Sync / Notifications")
         ToggleSetting(
             title = "Enable sync notifications",
-            description = "You won't be disturbed by notifications"
-        )
+            description = "You won't be disturbed by notifications",
+            state = settings.getSyncNotifications.collectAsState(initial = false).value
+        ) {
+            scope.launch { settings.setSyncNotifications(it) }
+        }
         Setting(title = "Sync interval", description = "5 minutes")
     }
 
@@ -192,11 +206,16 @@ class SettingsActivity : ComponentActivity() {
 
     @Composable
     fun WiFiSettings() {
+        val settings = SettingsStore(LocalContext.current)
+        val scope = rememberCoroutineScope()
         SectionTitle(title = "KeepHome WiFi")
         ToggleSetting(
             title = "Access point mode",
-            description = "KeepHome will connect to your own network"
-        )
+            description = "KeepHome will connect to your own network",
+            state = settings.getAPMode.collectAsState(initial = true).value
+        ) {
+            scope.launch { settings.setAPMode(it) }
+        }
         Setting(title = "WiFi name (SSID)", description = "<Name here>")
         Setting(title = "WiFi password", description = "Password is at least 8 characters")
     }
@@ -219,5 +238,7 @@ class SettingsActivity : ComponentActivity() {
             )
         })
     }
+
+
 
 }
