@@ -1,5 +1,6 @@
 package net.ddns.anderserver.keephome
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +10,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.ddns.anderserver.keephome.ui.theme.KeephomeTheme
@@ -27,7 +29,7 @@ class MainActivity : ComponentActivity() {
 @Preview(showBackground = true)
 @Composable
 fun Layout() {
-    KeephomeTheme {
+    KeephomeTheme() {
         Scaffold(
             topBar = { ActionBar() }
         ) {
@@ -51,8 +53,9 @@ fun ActionBar() {
 
 @Composable
 fun AppBarActions() {
-    IconButton(onClick = { /*TODO*/ }) {
-        Icon(Icons.Filled.Settings, contentDescription = "")
+    val context = LocalContext.current
+    IconButton(onClick = { context.startActivity(Intent(context, SettingsActivity::class.java)) }) {
+        Icon(Icons.Filled.Settings, contentDescription = "Settings")
     }
 }
 

@@ -66,10 +66,7 @@ private val DarkThemeColors = darkColorScheme(
 )
 
 @Composable
-fun KeephomeTheme(
-    useDarkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable() () -> Unit
-) {
+fun KeephomeTheme(useDarkTheme: Boolean = isSystemInDarkTheme(), content: @Composable() () -> Unit) {
     val colors = if (!useDarkTheme) {
         LightThemeColors
     } else {
