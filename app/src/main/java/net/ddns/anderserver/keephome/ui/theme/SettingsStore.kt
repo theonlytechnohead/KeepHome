@@ -2,10 +2,7 @@ package net.ddns.anderserver.keephome.ui.theme
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -15,6 +12,8 @@ class SettingsStore(private val context: Context) {
         val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
         val SYNC_NOTIFICATIONS = booleanPreferencesKey("sync_notifications")
+        val NOTIFICATION_INTERVAL = intPreferencesKey("notification_interval")
+        val intervalMinutes = listOf(1, 5, 10, 15)
 
         val AP_MODE = booleanPreferencesKey("ap_mode")
         val SSID = stringPreferencesKey("ssid")
@@ -33,6 +32,19 @@ class SettingsStore(private val context: Context) {
     suspend fun setSyncNotifications(state: Boolean) {
         context.dataStore.edit {
             it[SYNC_NOTIFICATIONS] = state
+        }
+    }
+
+//    Notification interval
+
+    val getNotificationInterval: Flow<Int> = context.dataStore.data
+        .map {
+            it[NOTIFICATION_INTERVAL] ?: 1
+        }
+
+    suspend fun setNotificationInterval(interval: Int) {
+        context.dataStore.edit {
+            it[NOTIFICATION_INTERVAL] = interval
         }
     }
 

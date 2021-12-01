@@ -9,8 +9,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
+import androidx.compose.material.RadioButton
 import androidx.compose.material.Switch
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
@@ -26,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.ddns.anderserver.keephome.ui.theme.KeephomeTheme
 import net.ddns.anderserver.keephome.ui.theme.SettingsStore
+import net.ddns.anderserver.keephome.ui.theme.SettingsStore.Companion.intervalMinutes
 
 
 class SettingsActivity : ComponentActivity() {
@@ -239,6 +242,46 @@ class SettingsActivity : ComponentActivity() {
     }
 
     @Composable
+    fun SingleSelectionSetting(
+        title: String,
+        value: Int,
+        values: List<Int>,
+        descriptionSingular: String,
+        descriptionPlural: String,
+        save: (text: Int) -> Unit
+    ) {
+        val showDialog = remember { mutableStateOf(false) }
+        val options = mutableListOf<String>()
+        values.forEach {
+            options.add(
+                if (it == 1) {
+                    "$it $descriptionSingular"
+                } else {
+                    "$it $descriptionPlural"
+                }
+            )
+        }
+        if (showDialog.value) {
+            SingleSelectionDialog(
+                title = title,
+                value = values.indexOf(value),
+                options = options,
+                save = { save(it) },
+                onDismiss = { showDialog.value = false }
+            )
+        }
+        Setting(
+            title = title,
+            description = if (value == 1) {
+                "$value $descriptionSingular"
+            } else {
+                "$value $descriptionPlural"
+            },
+            onClick = { showDialog.value = true }
+        )
+    }
+
+    @Composable
     fun TextDialog(
         title: String,
         text: String,
@@ -313,6 +356,58 @@ class SettingsActivity : ComponentActivity() {
     }
 
     @Composable
+    fun SingleSelectionDialog(
+        title: String,
+        value: Int,
+        options: List<String>,
+        save: (interval: Int) -> Unit,
+        onDismiss: () -> Unit
+    ) {
+        val (selectedOption, onOptionsSelected) = remember { mutableStateOf(options[value]) }
+        AlertDialog(
+            title = { Text(text = title) },
+            text = {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    options.forEach {
+                        Row(Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = (it == selectedOption),
+                                onClick = {
+                                    onOptionsSelected(it)
+                                    save(options.indexOf(it))
+                                }
+                            ),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = (it == selectedOption),
+                                onClick = {
+                                    onOptionsSelected(it)
+                                    save(options.indexOf(it))
+                                })
+                            Text(
+                                text = it,
+                                Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(text = "OK")
+                }
+            },
+            onDismissRequest = onDismiss,
+            dismissButton = {}
+        )
+    }
+
+    @Composable
     fun HorizontalLine() {
         Row(Modifier.padding(0.dp, 5.dp)) {
             Divider(
@@ -343,7 +438,16 @@ class SettingsActivity : ComponentActivity() {
         ) {
             scope.launch { settings.setSyncNotifications(it) }
         }
-        Setting(title = "Sync interval", description = "5 minutes")
+
+        SingleSelectionSetting(
+            title = "Sync interval",
+            value = intervalMinutes[settings.getNotificationInterval.collectAsState(initial = 1).value],
+            values = intervalMinutes,
+            descriptionSingular = "minute",
+            descriptionPlural = "minutes"
+        ) {
+            scope.launch { settings.setNotificationInterval(it) }
+        }
     }
 
     @Composable
