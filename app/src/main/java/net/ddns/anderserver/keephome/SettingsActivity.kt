@@ -85,7 +85,7 @@ class SettingsActivity : ComponentActivity() {
     fun SectionTitle(title: String) {
         Row(
             Modifier
-                .padding(80.dp, 15.dp, 0.dp, 10.dp)
+                .padding(80.dp, 20.dp, 0.dp, 10.dp)
                 .fillMaxWidth()
         ) {
             Text(
@@ -116,7 +116,7 @@ class SettingsActivity : ComponentActivity() {
         ) {
             Column(
                 Modifier
-                    .padding(80.dp, 18.dp, 0.dp, 18.dp)
+                    .padding(80.dp, 16.dp, 0.dp, 16.dp)
                     .weight(1f, fill = false)
             ) {
                 Text(
@@ -132,7 +132,7 @@ class SettingsActivity : ComponentActivity() {
             }
             if (toggle != null) {
                 Column(
-                    Modifier.requiredWidth(80.dp),
+                    Modifier.requiredWidth(85.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -409,11 +409,9 @@ class SettingsActivity : ComponentActivity() {
 
     @Composable
     fun HorizontalLine() {
-        Row(Modifier.padding(0.dp, 5.dp)) {
-            Divider(
-                thickness = 1.dp
-            )
-        }
+        Divider(
+            thickness = 1.dp
+        )
     }
 
 //    @Preview
