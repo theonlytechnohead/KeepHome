@@ -482,7 +482,10 @@ class SettingsActivity : ComponentActivity() {
         val settings = SettingsStore(LocalContext.current)
         val scope = rememberCoroutineScope()
         SectionTitle(title = "Advanced")
-        IPSetting(title = "KeepHome IP", ip = "192.168.4.1") {
+        IPSetting(
+            title = "KeepHome IP",
+            ip = settings.getIP.collectAsState(initial = "192.168.4.1").value
+        ) {
             scope.launch { settings.setIP(it) }
         }
     }

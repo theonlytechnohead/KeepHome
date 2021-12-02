@@ -9,17 +9,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.android.volley.Request
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
 import net.ddns.anderserver.keephome.ui.theme.KeephomeTheme
+import net.ddns.anderserver.keephome.ui.theme.SettingsStore
+import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
 
-    val result = mutableStateOf("")
+    private var result = mutableStateOf("{}")
 
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,6 +78,8 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun ButtonBar() {
+        val settings = SettingsStore(LocalContext.current)
+        val ip = settings.getIP.collectAsState(initial = "192.168.4.1").value
         Row(
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier
@@ -80,22 +87,41 @@ class MainActivity : ComponentActivity() {
                 .fillMaxWidth()
         ) {
             Button(onClick = {
-                refreshContent()
+                refreshContent(ip)
             }) {
                 Text(text = "Refresh")
             }
         }
     }
 
-    fun refreshContent() {
-        result.value = "Result!"
+    private fun refreshContent(address: String) {
+        val queue = Volley.newRequestQueue(this)
+        queue.add(
+            StringRequest(
+                Request.Method.POST,
+                "http://$address/post",
+                {
+                    result.value = it
+                },
+                {
+                    result.value = "Error: $it"
+                }
+            )
+        )
     }
 
     @Composable
     fun Content() {
-        val text by result
+        val json = JSONObject(result.value)
+        var time = ""
+        if (json.has("time")) time = json["time"].toString()
+        var additional = ""
+        if (json.has("additional")) additional = json["additional"].toString()
         Row(Modifier.padding(10.dp)) {
-            Text(text = text)
+            Text(text = "${time}s")
+        }
+        Row(Modifier.padding(10.dp)) {
+            Text(text = "Additional info: $additional")
         }
     }
 
