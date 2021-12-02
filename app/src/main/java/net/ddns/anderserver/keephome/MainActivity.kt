@@ -118,7 +118,7 @@ class MainActivity : ComponentActivity() {
         var additional = ""
         if (json.has("additional")) additional = json["additional"].toString()
         Row(Modifier.padding(10.dp)) {
-            Text(text = "${time}s")
+            Text(text = "Uptime: ${time}s")
         }
         Row(Modifier.padding(10.dp)) {
             Text(text = "Additional info: $additional")
