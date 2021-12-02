@@ -29,7 +29,6 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.launch
 import net.ddns.anderserver.keephome.ui.theme.KeephomeTheme
-import net.ddns.anderserver.keephome.ui.theme.SettingsStore
 import org.json.JSONObject
 
 
@@ -108,6 +107,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun AppBarActions() {
         val context = LocalContext.current
+        val ip = SettingsStore(context).getIP.collectAsState(initial = "192.168.4.1").value
         if (online.value)
             Text(text = "Online", color = MaterialTheme.colorScheme.secondary)
         else
@@ -117,7 +117,7 @@ class MainActivity : ComponentActivity() {
                 Intent(
                     context,
                     SettingsActivity::class.java
-                )
+                ).putExtra("ip", ip)
             )
         }) {
             Icon(Icons.Filled.Settings, contentDescription = "Settings")
@@ -239,9 +239,9 @@ class MainActivity : ComponentActivity() {
                 var ssid = ""
                 if (json.has("SSID")) ssid = json["SSID"].toString()
                 var apMode = ""
-                if (json.has("SSID")) apMode = json["WiFiMode"].toString()
+                if (json.has("WiFiMode")) apMode = json["WiFiMode"].toString()
                 var password = ""
-                if (json.has("SSID")) password = json["password"].toString()
+                if (json.has("password")) password = json["password"].toString()
                 Column(
                     Modifier
                         .padding(10.dp)

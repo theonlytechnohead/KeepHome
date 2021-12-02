@@ -1,4 +1,4 @@
-package net.ddns.anderserver.keephome.ui.theme
+package net.ddns.anderserver.keephome
 
 import android.content.Context
 import androidx.datastore.core.DataStore

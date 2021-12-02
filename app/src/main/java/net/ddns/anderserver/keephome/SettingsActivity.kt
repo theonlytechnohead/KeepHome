@@ -11,24 +11,32 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Divider
-import androidx.compose.material.RadioButton
-import androidx.compose.material.Switch
-import androidx.compose.material.TextField
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallTopAppBar
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
+import com.android.volley.toolbox.Volley
 import kotlinx.coroutines.launch
+import net.ddns.anderserver.keephome.SettingsStore.Companion.intervalMinutes
 import net.ddns.anderserver.keephome.ui.theme.KeephomeTheme
-import net.ddns.anderserver.keephome.ui.theme.SettingsStore
-import net.ddns.anderserver.keephome.ui.theme.SettingsStore.Companion.intervalMinutes
+import org.json.JSONObject
 
 
 class SettingsActivity : ComponentActivity() {
@@ -36,7 +44,49 @@ class SettingsActivity : ComponentActivity() {
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { SettingsLayout() }
+        setContent {
+            SettingsLayout()
+        }
+        getAllSettings(intent.getStringExtra("ip") ?: "192.168.4.1")
+    }
+
+    private fun getAllSettings(ip: String) {
+        val settings = SettingsStore(applicationContext)
+        val queue = Volley.newRequestQueue(this)
+        queue.add(
+            Networking.constructPOST(
+                ip,
+                mutableMapOf(
+                    "SSID" to "get",
+                    "WiFiMode" to "get",
+                    "password" to "get"
+                ),
+                {
+                    val json = JSONObject(it)
+                    if (json.has("SSID")) {
+                        lifecycleScope.launch {
+                            settings.setSSID(json["SSID"].toString())
+                        }
+                    }
+                    if (json.has("WiFiMode")) {
+                        lifecycleScope.launch {
+                            if (json["WiFiMode"].toString() == "0")
+                                settings.setAPMode(false)
+                            else
+                                settings.setAPMode(true)
+                        }
+                    }
+                    if (json.has("password")) {
+                        lifecycleScope.launch {
+                            settings.setPassword(json["password"].toString())
+                        }
+                    }
+                },
+                {
+                    // TODO: probably disable settings that can't be changed
+                }
+            )
+        )
     }
 
     @ExperimentalMaterial3Api
@@ -297,7 +347,8 @@ class SettingsActivity : ComponentActivity() {
                     onValueChange = {
                         textField = it
                         save(it)
-                    }
+                    },
+                    colors = TextFieldDefaults.textFieldColors(textColor = MaterialTheme.colorScheme.onSurfaceVariant)
                 )
             },
             confirmButton = {
@@ -328,7 +379,8 @@ class SettingsActivity : ComponentActivity() {
                         onValueChange = {
                             textField = it
                             save(it)
-                        }
+                        },
+                        colors = TextFieldDefaults.textFieldColors(textColor = MaterialTheme.colorScheme.onSurfaceVariant)
                     )
                     if (!verify(textField)) {
                         Spacer(modifier = Modifier.padding(10.dp))
