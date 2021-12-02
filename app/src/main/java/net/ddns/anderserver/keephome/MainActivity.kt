@@ -36,12 +36,12 @@ import org.json.JSONObject
 class MainActivity : ComponentActivity() {
 
     enum class ContentState {
-        BLANK, ERROR, INFO
+        BLANK, ERROR, INFO, DETAILED
     }
 
     private val state = mutableStateOf(ContentState.BLANK)
     private val online = mutableStateOf(false)
-    private var result = "{}"
+    private var result = mutableStateOf("{}")
 
     private lateinit var browseDisposable: Disposable
     private lateinit var rx2dnssd: Rx2DnssdBindable
@@ -134,10 +134,17 @@ class MainActivity : ComponentActivity() {
                 .padding(10.dp, 0.dp)
                 .fillMaxWidth()
         ) {
-            Button(onClick = {
-                refreshContent(ip)
-            }) {
+            Button(
+                modifier = Modifier.padding(10.dp, 0.dp),
+                onClick = { refreshContent(ip) }
+            ) {
                 Text(text = "Refresh")
+            }
+            Button(
+                modifier = Modifier.padding(10.dp, 0.dp),
+                onClick = { getDetailedInfo(ip) }
+            ) {
+                Text(text = "Info")
             }
         }
     }
@@ -149,15 +156,38 @@ class MainActivity : ComponentActivity() {
                 Request.Method.POST,
                 "http://$address/post",
                 {
+                    result.value = it
                     state.value = ContentState.INFO
-                    result = it
                 },
                 {
+                    result.value = it.toString()
                     state.value = ContentState.ERROR
-                    result = it.toString()
                 }
             )
         )
+    }
+
+    private fun getDetailedInfo(address: String) {
+        val queue = Volley.newRequestQueue(this)
+        val requestJSONObject = JSONObject()
+        requestJSONObject.put(
+            "SSID", "get"
+        )
+        val stringRequest = Networking.constructPOST(
+            address,
+            mutableMapOf(
+                "SSID" to "get"
+            ),
+            {
+                result.value = it
+                state.value = ContentState.DETAILED
+            },
+            {
+                result.value = it.toString()
+                state.value = ContentState.ERROR
+            }
+        )
+        queue.add(stringRequest)
     }
 
     @Composable
@@ -182,11 +212,11 @@ class MainActivity : ComponentActivity() {
                         .fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(text = "Error!", fontWeight = FontWeight.Bold)
-                    Text(text = result, fontStyle = FontStyle.Italic)
+                    Text(text = result.value, fontStyle = FontStyle.Italic)
                 }
             }
             ContentState.INFO -> {
-                val json = JSONObject(result)
+                val json = JSONObject(result.value)
                 var time = ""
                 if (json.has("time")) time = json["time"].toString()
                 var additional = ""
@@ -196,8 +226,23 @@ class MainActivity : ComponentActivity() {
                         .padding(10.dp)
                         .fillMaxWidth()
                 ) {
-                    Text(text = "Uptime: ${time}s")
+                    Text(text = "Uptime: $time seconds")
                     Text(text = "Additional info: $additional")
+                }
+            }
+            ContentState.DETAILED -> {
+                val json = JSONObject(result.value)
+                var time = ""
+                if (json.has("time")) time = json["time"].toString()
+                var ssid = ""
+                if (json.has("SSID")) ssid = json["SSID"].toString()
+                Column(
+                    Modifier
+                        .padding(10.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(text = "Uptime: $time seconds")
+                    Text(text = "SSID: $ssid")
                 }
             }
         }
