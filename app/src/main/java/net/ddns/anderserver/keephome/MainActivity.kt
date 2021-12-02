@@ -176,7 +176,9 @@ class MainActivity : ComponentActivity() {
         val stringRequest = Networking.constructPOST(
             address,
             mutableMapOf(
-                "SSID" to "get"
+                "SSID" to "get",
+                "WiFiMode" to "get",
+                "password" to "get"
             ),
             {
                 result.value = it
@@ -236,6 +238,10 @@ class MainActivity : ComponentActivity() {
                 if (json.has("time")) time = json["time"].toString()
                 var ssid = ""
                 if (json.has("SSID")) ssid = json["SSID"].toString()
+                var apMode = ""
+                if (json.has("SSID")) apMode = json["WiFiMode"].toString()
+                var password = ""
+                if (json.has("SSID")) password = json["password"].toString()
                 Column(
                     Modifier
                         .padding(10.dp)
@@ -243,6 +249,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Text(text = "Uptime: $time seconds")
                     Text(text = "SSID: $ssid")
+                    Text(text = "AP mode: $apMode")
+                    Text(text = "Password: $password")
                 }
             }
         }
