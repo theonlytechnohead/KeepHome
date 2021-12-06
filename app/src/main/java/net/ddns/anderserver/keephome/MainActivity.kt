@@ -136,6 +136,12 @@ class MainActivity : ComponentActivity() {
         ) {
             Button(
                 modifier = Modifier.padding(10.dp, 0.dp),
+                onClick = { restartKeepHome(ip) }
+            ) {
+                Text(text = "Restart")
+            }
+            Button(
+                modifier = Modifier.padding(10.dp, 0.dp),
                 onClick = { refreshContent(ip) }
             ) {
                 Text(text = "Refresh")
@@ -147,6 +153,23 @@ class MainActivity : ComponentActivity() {
                 Text(text = "Info")
             }
         }
+    }
+
+    private fun restartKeepHome(address: String) {
+        val queue = Volley.newRequestQueue(this)
+        queue.add(
+            StringRequest(
+                "http://$address/restart",
+                {
+                    result.value = "{}"
+                    state.value = ContentState.BLANK
+                },
+                {
+                    result.value = it.toString()
+                    state.value = ContentState.ERROR
+                }
+            )
+        )
     }
 
     private fun refreshContent(address: String) {
@@ -169,10 +192,6 @@ class MainActivity : ComponentActivity() {
 
     private fun getDetailedInfo(address: String) {
         val queue = Volley.newRequestQueue(this)
-        val requestJSONObject = JSONObject()
-        requestJSONObject.put(
-            "SSID", "get"
-        )
         val stringRequest = Networking.constructPOST(
             address,
             mutableMapOf(
@@ -202,7 +221,7 @@ class MainActivity : ComponentActivity() {
                         .fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Use the 'Refresh' button to get info",
+                        text = "Use the 'Refresh' button to get data",
                         fontStyle = FontStyle.Italic
                     )
                 }

@@ -271,7 +271,10 @@ class SettingsActivity : ComponentActivity() {
         save: (ip: String) -> Unit
     ) {
         fun checkIP(ip: String): Boolean {
-            return Regex("[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}").matches(ip)
+//            return Regex("[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}").matches(ip)
+            return Regex("(\\b25[0-5]|\\b2[0-4][0-9]|\\b[01]?[0-9][0-9]?)(\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}").matches(
+                ip
+            )
         }
 
         val showDialog = remember { mutableStateOf(false) }
