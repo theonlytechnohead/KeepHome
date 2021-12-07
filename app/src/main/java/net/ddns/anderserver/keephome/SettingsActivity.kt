@@ -506,6 +506,7 @@ class SettingsActivity : ComponentActivity() {
     @Composable
     fun WiFiSettings() {
         val settings = SettingsStore(LocalContext.current)
+        val address = settings.getIP.collectAsState(initial = "192.168.4.1").value
         val scope = rememberCoroutineScope()
         SectionTitle(title = "KeepHome WiFi")
         ToggleSetting(
@@ -515,12 +516,34 @@ class SettingsActivity : ComponentActivity() {
             state = settings.getAPMode.collectAsState(initial = true).value
         ) {
             scope.launch { settings.setAPMode(it) }
+            val queue = Volley.newRequestQueue(this)
+            val stringRequest = Networking.constructPOST(
+                address,
+                mutableMapOf(
+                    "WiFiMode" to "set",
+                    "newWiFimode" to it.toString()
+                ),
+                {},
+                {}
+            )
+            queue.add(stringRequest)
         }
         TextSetting(
             title = "WiFi name (SSID)",
             text = settings.getSSID.collectAsState(initial = "KeepHome").value,
         ) {
             scope.launch { settings.setSSID(it) }
+            val queue = Volley.newRequestQueue(this)
+            val stringRequest = Networking.constructPOST(
+                address,
+                mutableMapOf(
+                    "SSID" to "set",
+                    "newWiFiSSID" to it
+                ),
+                {},
+                {}
+            )
+            queue.add(stringRequest)
         }
         PasswordSetting(
             title = "WiFi password",
@@ -529,6 +552,17 @@ class SettingsActivity : ComponentActivity() {
             invalidPassword = "Password must be at least 8 characters"
         ) {
             scope.launch { settings.setPassword(it) }
+            val queue = Volley.newRequestQueue(this)
+            val stringRequest = Networking.constructPOST(
+                address,
+                mutableMapOf(
+                    "password" to "set",
+                    "newPassword" to it
+                ),
+                {},
+                {}
+            )
+            queue.add(stringRequest)
         }
     }
 
