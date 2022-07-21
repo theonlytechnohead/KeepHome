@@ -1,5 +1,6 @@
 package net.ddns.anderserver.keephome
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -46,7 +47,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var rx2dnssd: Rx2DnssdBindable
 
 
-    @ExperimentalMaterial3Api
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -78,6 +79,7 @@ class MainActivity : ComponentActivity() {
     }
 
 
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @ExperimentalMaterial3Api
     @Preview(showBackground = true)
     @Composable

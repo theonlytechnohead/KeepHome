@@ -41,7 +41,7 @@ import org.json.JSONObject
 
 class SettingsActivity : ComponentActivity() {
 
-    @ExperimentalMaterial3Api
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
