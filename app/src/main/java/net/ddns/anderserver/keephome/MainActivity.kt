@@ -1,6 +1,5 @@
 package net.ddns.anderserver.keephome
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -79,7 +78,6 @@ class MainActivity : ComponentActivity() {
     }
 
 
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @ExperimentalMaterial3Api
     @Preview(showBackground = true)
     @Composable
@@ -89,7 +87,9 @@ class MainActivity : ComponentActivity() {
                 topBar = { ActionBar() }
             ) {
                 Surface(color = MaterialTheme.colorScheme.background) {
-                    Column {
+                    Column(
+                        Modifier.padding(0.dp, it.calculateTopPadding(), 0.dp, 0.dp)
+                    ) {
                         ButtonBar()
                         Content()
                     }

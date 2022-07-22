@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.android.volley.toolbox.Volley
@@ -98,7 +99,7 @@ class SettingsActivity : ComponentActivity() {
                 topBar = { SettingsBar() }
             ) {
                 Surface(color = MaterialTheme.colorScheme.background) {
-                    SettingsContent()
+                    SettingsContent(it.calculateTopPadding())
                 }
             }
         }
@@ -117,9 +118,9 @@ class SettingsActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SettingsContent() {
+    fun SettingsContent(topPadding: Dp) {
         Column(
-            Modifier.verticalScroll(rememberScrollState())
+            Modifier.verticalScroll(rememberScrollState()).padding(0.dp, topPadding, 0.dp, 0.dp)
         ) {
             SyncSettings()
             HorizontalLine()
