@@ -94,7 +94,7 @@ class SettingsActivity : ComponentActivity() {
     @Preview(showBackground = true)
     @Composable
     fun SettingsLayout() {
-        KeephomeTheme() {
+        KeephomeTheme {
             Scaffold(
                 topBar = { SettingsBar() }
             ) {
@@ -120,7 +120,9 @@ class SettingsActivity : ComponentActivity() {
     @Composable
     fun SettingsContent(topPadding: Dp) {
         Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(0.dp, topPadding, 0.dp, 0.dp)
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(0.dp, topPadding, 0.dp, 0.dp)
         ) {
             SyncSettings()
             HorizontalLine()
