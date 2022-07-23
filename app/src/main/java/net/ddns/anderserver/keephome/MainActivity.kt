@@ -161,7 +161,7 @@ class MainActivity : ComponentActivity() {
         val queue = Volley.newRequestQueue(this)
         queue.add(
             StringRequest(
-                "http://$address/restart",
+                "http://$address:7000/restart",
                 {
                     result.value = "{}"
                     state.value = ContentState.BLANK
@@ -179,7 +179,7 @@ class MainActivity : ComponentActivity() {
         queue.add(
             StringRequest(
                 Request.Method.POST,
-                "http://$address/post",
+                "http://$address:7000/post",
                 {
                     result.value = it
                     state.value = ContentState.INFO

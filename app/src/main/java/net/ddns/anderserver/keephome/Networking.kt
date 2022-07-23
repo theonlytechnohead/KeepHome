@@ -15,7 +15,7 @@ class Networking {
         ): StringRequest {
             return object : StringRequest(
                 Method.POST,
-                "http://$address/post",
+                "http://$address:7000/post",
                 response,
                 error
             ) {
