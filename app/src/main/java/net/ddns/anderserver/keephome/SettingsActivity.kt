@@ -23,13 +23,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallTopAppBar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -113,7 +112,7 @@ class SettingsActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun SettingsBar() {
-        SmallTopAppBar(
+        TopAppBar(
             title = { Text(text = "Settings") },
             navigationIcon = {
                 IconButton(onClick = { finish() }) {
@@ -343,7 +342,6 @@ class SettingsActivity : ComponentActivity() {
         )
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun TextDialog(
         title: String,
@@ -360,8 +358,7 @@ class SettingsActivity : ComponentActivity() {
                     onValueChange = {
                         textField = it
                         save(it)
-                    },
-                    colors = TextFieldDefaults.textFieldColors(MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 )
             },
             confirmButton = {
@@ -374,7 +371,6 @@ class SettingsActivity : ComponentActivity() {
         )
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun VerifiableDialog(
         title: String,
@@ -393,8 +389,7 @@ class SettingsActivity : ComponentActivity() {
                         onValueChange = {
                             textField = it
                             save(it)
-                        },
-                        colors = TextFieldDefaults.textFieldColors(MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     )
                     if (!verify(textField)) {
                         Spacer(modifier = Modifier.padding(10.dp))

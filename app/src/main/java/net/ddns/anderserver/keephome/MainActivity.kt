@@ -101,8 +101,8 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun ActionBar() {
-        SmallTopAppBar(
-            title = { Text(text = "KeepHome") },
+        TopAppBar(
+            title = { Text("KeepHome") },
             actions = { AppBarActions() }
         )
     }
